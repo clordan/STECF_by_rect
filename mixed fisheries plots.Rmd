@@ -1,0 +1,42 @@
+---
+title: "WGCSE Mixed fisheries Discriptive Overview"
+author: "Colm Lordan"
+date: "12 February 2016"
+output: word_document
+---
+
+This is an R Markdown document. M
+
+```{r, }
+library(dplyr)
+library(ggplot2)
+library(mapplots)
+library(tidyr)
+library(knitr)
+lan <- read.csv("C:/codtag/Landings_(t)_by_rectangle_and_quarter_data_all_sp.csv")
+eff <- read.csv("C:/codtag/Effort_(hours_fished)_by_rectangle_and_quarter_data.csv")
+names(lan)[1] <- "Area"
+
+```
+
+
+
+```{r, echo=TRUE, fig.height=7, fig.width=8}
+
+land <- lan %>% filter(Area == "3C" & Year > 2011) %>% group_by(Species, Regulated.gear) %>% summarise(Landings=sum(Measure.Values)/3)
+
+by_species <- lan %>% filter(Area == "3C" & Year > 2011) %>% group_by(Species) %>% summarise(Landings=sum(Measure.Values)/3) %>% mutate(rank = min_rank(desc(Landings)))
+
+land <- left_join(land, by_species, by= "Species")
+names(land)[3] <- "Landings"
+names(land)[4] <- "Total.Landings"
+
+ggplot(land[land$rank<21,], aes(y = Species, x = Regulated.gear)) +
+  geom_tile(aes(fill = Landings)) +
+  geom_text(aes(label = round(Landings, 0))) +
+  scale_fill_gradient(low = "white", high = "red") +
+  theme_light() +
+  theme(axis.text.x = element_text(angle=90, vjust = 0.5))
+```
+
+
