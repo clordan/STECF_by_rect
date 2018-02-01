@@ -2,7 +2,9 @@
 title: "Cod fisheries data summary"
 author: "Colm Lordan"
 date: "5 February 2016"
-output: word_document
+output:
+  pdf_document: default
+  word_document: default
 ---
 
 This document summaries the fisheries dependent data for cod around the Irish Sea. It is generated using r Markdown code for easy reproducibility, further analysis and development as required. The first step is download the data from the JRC website and read it into R.  I download the detailed data for VIIa, VIa and VIIb-k (Annex IIa; 3c&3d and Cel1) and re-aggregate and summaries in R as required. 
@@ -21,7 +23,7 @@ library(ggplot2)
 library(mapplots)
 library(tidyr)
 library(knitr)
-setwd("~/GitHub/STECF_by_rect")
+#setwd("~/GitHub/STECF_by_rect")
 cod <- read.csv("./Landings_(t)_by_rectangle_and_quarter_data.csv")
 eff <- read.csv("./Effort_(hours_fished)_by_rectangle_and_quarter_data.csv")
 
@@ -33,8 +35,10 @@ effs$yr <- paste0(effs$Year, effs$Rectangle)
 cods <- left_join(cods, effs, by="yr")
 cods <- cods[,c(1:3,7)]
 names(cods) <- c("Year", "Rectangle",      "t", "hrs")
-cods <- cbind(ices.rect(cods$Rectangle), cods)
+rect <- cods$Rectangle
+rect <- ices.rect(as.character(rect))
 
+cods <- cbind.data.frame(rect, cods)
 col <- terrain.colors(12)
 cods$col <- col[match(cods$Year-2002,1:12)]
 
@@ -61,15 +65,15 @@ draw.shape(coast, col="cornsilk")
 lines(x= c(-6,-5.1), y=c(55, 55), col="red")
 lines(x= c(-7.6,-5.2), y=c(52, 52), col="red")
 
-draw.xy(cods$lon, cods$lat, cods$Year, cods$t, width=1, height=0.5,
-        col=cods$col, type="h",lwd=3, border=NA)
-
-draw.xy(cods$lon, cods$lat, cods$Year, cods$hrs, width=1, height=0.5, col="darkblue",
-         type="l", border=NA)
-
-legend("bottomright", c(2003:2014,"Effort Hrs"), pch=c(rep(22,12),16), pt.bg=c(col,NA),
-      pt.cex=c(rep(2,12),0.8),col=c(rep(1,12),"darkblue"), lty=c(rep(NA,12),1), bg="lightblue",
-      inset=0.02, title="Landings", cex=0.8)
+ draw.xy(cods$lon, cods$lat, cods$Year, cods$t, width=1, height=0.5,
+         col=cods$col, type="h",lwd=3, border=NA)
+ 
+ draw.xy(cods$lon, cods$lat, cods$Year, cods$hrs, width=1, height=0.5, col="darkblue",
+          type="l", border=NA)
+ 
+ legend("bottomright", c(2003:2014,"Effort Hrs"), pch=c(rep(22,12),16), pt.bg=c(col,NA),
+       pt.cex=c(rep(2,12),0.8),col=c(rep(1,12),"darkblue"), lty=c(rep(NA,12),1), bg="lightblue",
+       inset=0.02, title="Landings", cex=0.8)
 
 cod7ar <- cod %>% filter(Area == "3C") %>% group_by(Rectangle) %>% summarise(Total=sum(Measure.Values))
 high <- arrange(cod7ar, desc(Total))[1,1]
@@ -123,7 +127,7 @@ cod7ag <- cod7a %>% group_by(Regulated.gear) %>% summarise(meanlpue=mean(lpue))
 
 The effort metric reported by rectangle in the STECF database is hours fished.  How this is estimated across different member states may differ.  In Ireland it is based on hours reported in the logbooks and this has in the past been strongly correlated with other effort metrics (e.g. days fished, days at sea, KwDays).  Effort of the three main cod catching gears all show declining trends over the time serise. The largest decline has been in the TR1 gear group where effort has droped from 200khrs in 2003 to 11khrs in 2014.  
 
-The highest reported lpue has been in the TR1 gear group (with and average annual lpue of `r round(cod7ag[cod7ag$Regulated.gear=="TR1",2],1) `kg/hr.  Lpue showed and increasing  trend up to 2009 but has declined thereafter to `r round(cod7a[cod7a$Regulated.gear=="TR1" & cod7a$Year == 2014,5],1) `kg/hr.  The lowest lpue throughought the time serise has been in the TR2 gear group  with a mean lpue of `r round(cod7ag[cod7ag$Regulated.gear=="TR2",2],1) `kg/hr.  This gear group includes the *Nephrops* métier and accounts for the majority of the cod catching effort in VIIa (note there is significant effort in pot and dredge fisheries in VIIa but cod catches tend to be very minor). 
+The highest reported lpue has been in the TR1 gear group (with and average annual lpue of `r round(cod7ag[cod7ag$Regulated.gear=="TR1",2],1) `kg/hr.  Lpue showed and increasing  trend up to 2009 but has declined thereafter to `r round(cod7a[cod7a$Regulated.gear=="TR1" & cod7a$Year == 2014,5],1) `kg/hr.  The lowest lpue throughought the time serise has been in the TR2 gear group  with a mean lpue of `r round(cod7ag[cod7ag$Regulated.gear=="TR2",2],1) `kg/hr.  This gear group includes the *Nephrops* m?tier and accounts for the majority of the cod catching effort in VIIa (note there is significant effort in pot and dredge fisheries in VIIa but cod catches tend to be very minor). 
 
 ```{r, echo=FALSE, message=FALSE, fig.height=5, fig.width=7}
 
